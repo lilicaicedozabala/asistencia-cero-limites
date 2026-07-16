@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asistencia · Cero Límites</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#FFFBF7;--ink:#1A0F14;--sb:#E60063;--sa:#F18700;
+--sunrise:linear-gradient(135deg,#F18700,#E60063);
+--ink-60:rgba(26,15,20,.6);--ink-40:rgba(26,15,20,.4);--ink-12:rgba(26,15,20,.12);--surface:#FFF7F0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--paper);font-family:'Inter',sans-serif;color:var(--ink);
+min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{width:100%;max-width:400px}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+letter-spacing:.14em;text-transform:uppercase;color:var(--sb);margin-bottom:8px}
+h1{font-family:'DM Serif Display',serif;font-size:28px;font-weight:400;line-height:1.15;margin-bottom:6px}
+h1 em{font-style:italic;color:var(--sb)}
+.sub{font-size:14px;color:var(--ink-60);margin-bottom:26px;line-height:1.5}
+label{display:block;font-size:12.5px;font-weight:600;margin:16px 0 6px}
+input{width:100%;padding:14px;font-size:16px;font-family:inherit;
+border:1px solid var(--ink-12);border-radius:10px;background:#fff;color:var(--ink)}
+input:focus{outline:none;border-color:var(--sb)}
+.btn{width:100%;margin-top:22px;padding:15px;font-size:15px;font-weight:700;font-family:inherit;
+border:0;border-radius:10px;background:var(--sunrise);color:#fff;cursor:pointer}
+.btn:disabled{opacity:.5}
+.ok{background:var(--surface);border-radius:14px;padding:28px 22px;text-align:center}
+.ok .big{font-size:44px;margin-bottom:10px}
+.ok h2{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;margin-bottom:6px}
+.ok p{font-size:13.5px;color:var(--ink-60)}
+.cerrada{background:var(--surface);border-radius:14px;padding:28px 22px;text-align:center}
+.cerrada p{font-size:14px;color:var(--ink-60);line-height:1.5}
+.err{margin-top:12px;font-size:13px;color:var(--sb);display:none;line-height:1.4}
+.logo{margin-bottom:26px;font-family:'DM Serif Display',serif;font-size:15px}
+.logo em{font-style:italic;color:var(--sb)}
+.priv{margin-top:14px;font-size:11px;color:var(--ink-40);line-height:1.4}
+</style></head>
+<body>
+<div class="card" id="app">
+  <div class="logo">Sugar<em>Valley</em></div>
+  <div class="eyebrow">Cero Límites · Asistencia</div>
+  <div id="contenido"><p class="sub">Cargando…</p></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+
+async function init(){
+  try {
+    const r = await fetch("/api/estado");
+    const d = await r.json();
+    if (!d.activa) return pintarCerrada();
+    pintarFormulario();
+  } catch(e){ pintarCerrada(); }
+}
+
+function pintarCerrada(){
+  $("contenido").innerHTML = `
+    <h1>No hay sesión <em>activa</em></h1>
+    <div class="cerrada" style="margin-top:18px">
+      <p>El registro se abre cuando empieza la sesión.<br>
+      Si estás en la sesión y ves esto, avísale al equipo Sugar Valley.</p>
+    </div>`;
+}
+
+function pintarFormulario(){
+  $("contenido").innerHTML = `
+    <h1>Registra tu <em>asistencia</em></h1>
+    <p class="sub">Escribe tu correo institucional. Un toque y listo.</p>
+    <label for="correo">Tu correo</label>
+    <input type="email" id="correo" placeholder="nombre@ccc.org.co" autocomplete="email" autocapitalize="off">
+    <button class="btn" id="enviar">Registrar asistencia</button>
+    <p class="err" id="err"></p>
+    <p class="priv">Solo se usa para verificar tu asistencia al programa Cero Límites.</p>`;
+  $("enviar").addEventListener("click", registrar);
+  $("correo").addEventListener("keydown", e => { if(e.key==="Enter") registrar(); });
+}
+
+async function registrar(){
+  const correo = $("correo").value.trim();
+  const err = $("err");
+  err.style.display = "none";
+  if (!correo || !correo.includes("@")){
+    err.textContent = "Escribe un correo válido."; err.style.display="block"; return;
+  }
+  $("enviar").disabled = true;
+  $("enviar").textContent = "Registrando…";
+  try {
+    const r = await fetch("/api/registrar", { method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ correo }) });
+    const d = await r.json();
+    if (!d.ok){
+      err.textContent = d.mensaje || "No se pudo registrar."; err.style.display="block";
+      $("enviar").disabled=false; $("enviar").textContent="Registrar asistencia"; return;
+    }
+    $("contenido").innerHTML = `
+      <div class="ok">
+        <div class="big">${d.ya ? "👋" : "✅"}</div>
+        <h2>${d.mensaje}</h2>
+        <p>${d.ya ? "Tu asistencia de hoy ya estaba guardada." : "¡Que disfrutes la sesión!"}</p>
+      </div>`;
+  } catch(e){
+    err.textContent = "Error de conexión. Intenta de nuevo."; err.style.display="block";
+    $("enviar").disabled=false; $("enviar").textContent="Registrar asistencia";
+  }
+}
+init();
+</script>
+</body></html>

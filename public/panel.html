@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel · Asistencia Cero Límites</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#FFFBF7;--ink:#1A0F14;--sb:#E60063;--sa:#F18700;
+--sunrise:linear-gradient(135deg,#F18700,#E60063);
+--ink-60:rgba(26,15,20,.6);--ink-40:rgba(26,15,20,.4);--ink-12:rgba(26,15,20,.12);--surface:#FFF7F0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--paper);font-family:'Inter',sans-serif;color:var(--ink);padding:26px;max-width:1000px;margin:0 auto}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--sb)}
+h1{font-family:'DM Serif Display',serif;font-size:30px;font-weight:400;margin:6px 0 22px}
+h1 em{font-style:italic;color:var(--sb)}
+.login{max-width:340px;margin:80px auto}
+.login input{width:100%;padding:13px;font-size:15px;border:1px solid var(--ink-12);border-radius:10px;margin-bottom:12px}
+.btn{padding:12px 20px;font-size:14px;font-weight:700;font-family:inherit;border:0;border-radius:9px;background:var(--sunrise);color:#fff;cursor:pointer}
+.btn.sec{background:var(--paper);color:var(--ink);border:1px solid var(--ink-12)}
+.btn:disabled{opacity:.5}
+.sesiones{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:11px;margin-bottom:28px}
+.ses{border:1px solid var(--ink-12);border-radius:12px;padding:15px;background:#fff}
+.ses.on{border-color:var(--sb);background:var(--surface);box-shadow:0 0 0 2px var(--sb)}
+.ses .f{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--ink-40)}
+.ses h3{font-size:14px;margin:5px 0 3px}
+.ses .n{font-size:11.5px;color:var(--ink-60);margin-bottom:11px}
+.ses .estado{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--sb)}
+.ses button{width:100%}
+.reg{border:1px solid var(--ink-12);border-radius:12px;overflow:hidden;background:#fff}
+.reg-h{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--surface)}
+.reg-h h2{font-size:15px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.08em;
+text-transform:uppercase;color:var(--ink-40);text-align:left;padding:9px 14px;border-bottom:1px solid var(--ink-12)}
+td{padding:9px 14px;border-bottom:1px solid rgba(26,15,20,.05)}
+.mono{font-family:'JetBrains Mono',monospace;font-size:11.5px}
+.vacio{padding:30px;text-align:center;color:var(--ink-40);font-size:13px}
+.aviso{background:var(--surface);border-left:2px solid var(--sb);padding:12px 15px;border-radius:0 8px 8px 0;
+font-size:13px;color:var(--ink-60);margin-bottom:20px;line-height:1.5}
+</style></head>
+<body>
+<div id="login" class="login">
+  <div class="eyebrow">Panel de asistencia</div>
+  <h1>Cero <em>Límites</em></h1>
+  <input type="password" id="pwd" placeholder="Clave de acceso">
+  <button class="btn" id="entrar">Entrar</button>
+</div>
+
+<div id="panel" style="display:none">
+  <div class="eyebrow">Panel de asistencia · Cero Límites</div>
+  <h1>Control de <em>sesiones</em></h1>
+  <div class="aviso">
+    <b>Cómo funciona:</b> activa la sesión cuando empiece, proyecta el QR (la dirección de
+    esta página de registro), y desactívala al terminar. El builder solo escribe su correo —
+    se valida contra la lista de los 50, sin exponer nombres de otros participantes.
+  </div>
+  <div class="sesiones" id="sesiones"></div>
+  <div class="reg">
+    <div class="reg-h">
+      <h2>Registros <span class="mono" id="n-reg"></span></h2>
+      <button class="btn sec" id="csv">⬇ Descargar CSV</button>
+    </div>
+    <table>
+      <thead><tr><th>Hora</th><th>Nombre</th><th>Correo</th><th>Sesión</th></tr></thead>
+      <tbody id="tb"><tr><td colspan="4"><div class="vacio">Sin registros aún.</div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const SESIONES = [{"id": "live-15jul", "nombre": "Live de soporte técnico", "fecha": "Mié 15 jul"}, {"id": "despertar", "nombre": "El Despertar", "fecha": "21–30 jul"}, {"id": "sinlimites-c1", "nombre": "Sin Límites · Cohorte 1", "fecha": "Lun 3 ago"}, {"id": "sinlimites-c2", "nombre": "Sin Límites · Cohorte 2", "fecha": "Jue 6 ago"}, {"id": "sinlimites-c3", "nombre": "Sin Límites · Cohorte 3", "fecha": "Lun 10 ago"}, {"id": "sinlimites-c4", "nombre": "Sin Límites · Cohorte 4", "fecha": "Jue 13 ago"}, {"id": "legado-c1", "nombre": "El Legado · Cohorte 1", "fecha": "Jue 20 ago"}, {"id": "legado-c2", "nombre": "El Legado · Cohorte 2", "fecha": "Vie 21 ago"}, {"id": "legado-c3", "nombre": "El Legado · Cohorte 3", "fecha": "Lun 24 ago"}, {"id": "legado-c4", "nombre": "El Legado · Cohorte 4", "fecha": "Mar 25 ago"}];
+const $ = id => document.getElementById(id);
+let CLAVE = null, D = { activa:null, registros:[] };
+const H = () => ({ "Content-Type":"application/json", "Authorization":"Bearer " + CLAVE });
+
+$("entrar").addEventListener("click", login);
+$("pwd").addEventListener("keydown", e => { if(e.key==="Enter") login(); });
+async function login(){
+  const pwd = $("pwd").value;
+  const r = await fetch("/api/admin-login", { method:"POST",
+    headers:{"Content-Type":"application/json"}, body: JSON.stringify({ password: pwd }) });
+  if (!r.ok){ alert("Clave incorrecta."); return; }
+  CLAVE = pwd;
+  $("login").style.display = "none";
+  $("panel").style.display = "block";
+  cargar(); setInterval(cargar, 5000);
+}
+
+async function cargar(){
+  const r = await fetch("/api/admin-registros", { headers: H() });
+  D = await r.json();
+  pintar();
+}
+
+function pintar(){
+  $("sesiones").innerHTML = SESIONES.map(s => {
+    const on = D.activa === s.id;
+    const n = D.registros.filter(r => r.sesion === s.id).length;
+    return `<div class="ses ${on ? "on" : ""}">
+      <div class="f">${s.fecha}</div>
+      <h3>${s.nombre}</h3>
+      <div class="n">${n} registrado(s)</div>
+      ${on ? `<div class="estado">● ACTIVA</div>
+              <button class="btn sec" style="margin-top:8px" onclick="activar(null)">Desactivar</button>`
+           : `<button class="btn" onclick="activar('${s.id}')">Activar</button>`}
+    </div>`;
+  }).join("");
+
+  const regs = [...D.registros].reverse();
+  $("n-reg").textContent = "· " + regs.length;
+  const nom = id => (SESIONES.find(s => s.id === id) || {}).nombre || id;
+  $("tb").innerHTML = regs.length ? regs.map(r => `
+    <tr><td class="mono">${r.hora}</td><td><b>${r.nombre}</b></td>
+    <td class="mono">${r.correo}</td><td>${nom(r.sesion)}</td></tr>`).join("")
+    : `<tr><td colspan="4"><div class="vacio">Sin registros aún.</div></td></tr>`;
+}
+
+async function activar(id){
+  if (id === null && !confirm("¿Desactivar la sesión? Nadie podrá registrarse hasta activar otra.")) return;
+  const r = await fetch("/api/admin-activar", { method:"POST", headers: H(),
+    body: JSON.stringify({ sesion: id }) });
+  D = { ...D, ...(await r.json()) };
+  cargar();
+}
+
+$("csv").addEventListener("click", () => {
+  const esc = s => '"' + String(s).replace(/"/g,'""') + '"';
+  const nom = id => (SESIONES.find(s => s.id === id) || {}).nombre || id;
+  const filas = [["hora","nombre","correo","sesion"].join(",")]
+    .concat(D.registros.map(r => [r.hora, r.nombre, r.correo, nom(r.sesion)].map(esc).join(",")));
+  const blob = new Blob(["\ufeff" + filas.join("\n")], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "asistencia-cero-limites.csv"; a.click();
+});
+</script>
+</body></html>
