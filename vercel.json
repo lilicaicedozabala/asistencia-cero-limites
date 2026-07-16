@@ -1,0 +1,6 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/panel", "destination": "/panel.html" }
+  ]
+}
